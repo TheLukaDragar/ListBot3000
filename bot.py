@@ -1,5 +1,8 @@
 # bot.py
+import socketserver
+import http.server
 import os
+import threading
 
 import discord
 from dotenv import load_dotenv
@@ -16,8 +19,21 @@ with open('questions.txt', 'r') as f:
 
 bot = commands.Bot(command_prefix='?')
 
-writin=False
+writin = False
 
+def server():
+    
+    PORT = 5500
+    Handler = http.server.SimpleHTTPRequestHandler
+
+    with socketserver.TCPServer(("", PORT), Handler) as httpd:
+        print("serving at port", PORT)
+        
+        httpd.serve_forever()
+      
+
+t = threading.Thread(target=server, args=())
+t.start()
 
 def f(x):
     return {
@@ -50,8 +66,8 @@ async def on_ready():
 async def ask(ctx, *, arg):
 
     llen = len(questions)
-
-    q =str(llen+1)+". "+ str(ctx.message.author.name)+": "+str(arg)
+   
+    q = str(llen+1)+". " + str(ctx.message.author.display_name)+": "+str(arg)
     questions.append(q)   
 
     #await ctx.send("added to list now "+ str(len(questions)) +" questions")
@@ -100,8 +116,11 @@ def updatenum():
 def backup():
     with open('questions.txt', 'w') as f:
         for item in questions:
-            f.write("%s\n" % item)
-
+            itemmm = item.strip()
+            trrr = str.join(" ", itemmm.splitlines())
+            f.write(trrr+"\n")
+    
+    
 
 @bot.command()
 async def ls(ctx):
@@ -113,7 +132,12 @@ async def ls(ctx):
 
     else:
         resp="List is empty add a question with ?ask "
-    await ctx.send(str(resp))
+
+    if len(resp)<1800:
+        await ctx.send(str(resp))
+    else:
+        for a in range(0,int(len(resp)/1800)+1):
+            await ctx.send(str(str(resp)[0+(a*1800):(1800*(a+1))]))
 
 @bot.command()
 async def lsrem(ctx, torm):
